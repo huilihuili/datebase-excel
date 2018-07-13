@@ -4,6 +4,8 @@ import refactoring.edu.util.list_util as list_util
 import refactoring.edu.config.table_config as table_config
 import refactoring.edu.domain.qa as qa
 
+import datetime
+
 
 class Gradation(object):
     DISTRICT_IDS_2 = ['9', '1', '2']
@@ -15,6 +17,11 @@ class Gradation(object):
     def __init__(self, enroll_year, grade_lev):
         self.enroll_year = enroll_year
         self.grade_lev = grade_lev
+
+        self.district_ids = self.get_district_ids()
+        self.district_names = self.get_district_names()
+        self.subject_ids = self.get_subject_ids()
+        self.subject_names = self.get_subject_names()
 
     def get_district_ids(self):
         if self.grade_lev == 2:
@@ -84,6 +91,25 @@ class Exam(object):
             self.class_table = table_config.get_class_sum_table(table_config.QA_ZK_CODE)
         elif base_student == Exam.CURRENT:
             self.class_table = table_config.get_class_sum_table(table_config.QA_CODE)
+
+        self.school_ids = self.get_school_ids()
+        self.school_names = self.get_school_names()
+        self.class_ids = self.get_class_ids()
+        self.class_names = self.get_class_names()
+
+        self.exam_ids = []
+        self.exam_nicks = []
+        for subject_id in gradation.subject_ids:
+            self.exam_ids.append(self.get_exam_ids(subject_id))
+            self.exam_nicks.append(self.get_exam_nicks(subject_id))
+
+        self.distribution_ids = []
+        distribution = Distribution(self.exam_nick, "总分")
+        self.count = distribution.get_count()
+        self.distribution_ids.append(distribution.get_ids())
+        for subject_name in gradation.subject_names:
+            distribution.subject_name = subject_name
+            self.distribution_ids.append(distribution.get_ids())
 
     def get_school_ids(self):
         return qam_dao.get_all_school_ids_order(self.gradation.grade_lev, self.exam_id, self.school_table)
@@ -288,34 +314,14 @@ class Where(object):
             self.fixed.append(self.subject)
 
 
-class GradationIds(object):
-    def __init__(self, gradation):
-        # gradation = Gradation()
-        self.subject_ids = gradation.get_subject_ids()
-        self.subject_names = gradation.get_subject_names()
-        self.district_ids = gradation.get_district_ids()
-        self.district_names = gradation.get_district_names()
-
-
-class GradationExamIds(object):
-    def __init__(self, exam, subject_ids):
-        # exam = Exam()
-        self.school_ids = exam.get_school_ids()
-        self.school_names = exam.get_school_names()
-        self.class_ids = exam.get_class_ids()
-        self.class_names = exam.get_class_names()
-        self.exam_ids = []
-        self.exam_nicks = []
-
-        for subject_id in subject_ids:
-            self.exam_ids.append(exam.get_exam_ids(subject_id))
-            self.exam_nicks.append(exam.get_exam_nicks())
-
-
 if __name__ == '__main__':
-    a = qa.Where("ss")
-    b = qa.Where("sss")
-    print(a)
-    a = [a]
-    a.append(b)
-    print(a)
+    d1 = datetime.datetime.now()
+    enroll_year = 2014
+    grade_lev = 2
+    gradation = Gradation(enroll_year, grade_lev)
+
+    exam_id = '8c4646637f44489c9ba9333e580fe9d0'
+    base_student = Exam.SPECIAL
+    exam = Exam(gradation, exam_id, base_student)
+    d2 = datetime.datetime.now()
+    print(d2 - d1)

@@ -342,7 +342,11 @@ class Where(object):
     def set_district_fixed(self, district_code, value):
         self.set_district_varied(district_code)
         self.fixed = self.varied
-        qa.Cell.set_where_value_static(self.varied, value)
+        if isinstance(self.fixed, list):
+            for i, w in enumerate(self.fixed):
+                w.set_value(value[i])
+        else:
+            self.fixed.set_value(value)
 
     def set_district_subject_fixed(self, district_code, value, subject_id=None):
         self.set_district_fixed(district_code, value)

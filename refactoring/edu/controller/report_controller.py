@@ -32,12 +32,6 @@ def get_subject_code(subject_id):
         return SUBJECT_CODE
 
 
-class CellOrder(object):
-    def __init__(self, item, ids):
-        self.item = item
-        self.ids = ids
-
-
 class ValueCell(object):
     def __init__(self, exam, where):
         self.item = None
@@ -57,7 +51,8 @@ class ValueCell(object):
         return where_list
 
     def get_cell(self):
-        return qa.Cell(self.item, self.table, self.get_where_list())
+        where_list = qa.MainWhere(self.where.fixed, self.where.varied)
+        return qa.Cell(self.item, self.table, where_list)
 
 
 class OrderValueCell(ValueCell):
@@ -66,8 +61,9 @@ class OrderValueCell(ValueCell):
         self.order = None
 
     def get_cell(self):
-        return qa.CellWithOrders(self.item, self.table, self.get_where_list(),
-                                 self.order.item, self.order.ids)
+        where_list = qa.MainWhere(self.where.fixed, self.where.varied)
+        return qa.CellWithOrders(self.item, self.table, where_list,
+                                 self.order)
 
 
 class RowValue(ValueCell):
@@ -107,14 +103,14 @@ class ExamSubjectOrderValue(DistrictExamSubjectOrderValue):
     def __init__(self, item, table_code, district_code, exam, where):
         super(ExamSubjectOrderValue, self).__init__(item, table_code, district_code, exam, where)
         self.where.set_exam_fixed()
-        self.order = CellOrder("subjectId", self.exam.gradation.subject_ids)
+        self.order = qa.CellOrder("subjectId", self.exam.gradation.subject_ids)
 
 
 class SubjectExamOrderValue(DistrictExamSubjectOrderValue):
     def __init__(self, item, table_code, district_code, subject_id, exam, where):
         super(SubjectExamOrderValue, self).__init__(item, table_code, district_code, exam, where)
         self.where.set_subject_fixed(subject_id)
-        self.order = CellOrder("examId", self.exam.get_subject_exam_ids(subject_id))
+        self.order = qa.CellOrder("examId", self.exam.get_subject_exam_ids(subject_id))
 
 
 class OneRowValue(RowValue):

@@ -32,6 +32,27 @@ class Where(object):
         return self.add(other)
 
 
+class MainWhere(object):
+    def __init__(self, fixed, varied):
+        self.fixed = fixed
+        self.varied = varied
+
+    def set_value(self, value):
+        if isinstance(self.varied, list):
+            for i, w in enumerate(self.varied):
+                w.set_value(value[i])
+        else:
+            self.varied.set_value(value)
+
+    def get_where_list(self):
+        where_list = [self.varied]
+        if isinstance(self.fixed, list):
+            where_list += self.fixed
+        else:
+            where_list.append(self.fixed)
+        return str_util.list_to_str(list_util.to_a_list(where_list), symbol=" AND")
+
+
 class Cell(object):
     def __init__(self, select_name, table_name, where_list):
         self.select_name = select_name
@@ -44,26 +65,15 @@ class Cell(object):
     def get_table_name(self):
         return str_util.list_to_str(self.table_name)
 
-    def get_where_list(self):
-        return str_util.list_to_str(list_util.to_a_list(self.where_list), symbol=" AND")
-
-    @staticmethod
-    def set_where_value_static(where, value):
-        if isinstance(where, list):
-            for i, w in enumerate(where):
-                w.set_value(value[i])
-        else:
-            where.set_value(value)
-
-    def set_where_value(self, index, value):
-        Cell.set_where_value_static(self.where_list[index], value)
+    def set_where_value(self, value):
+        self.where_list.set_value(value)
 
     def get_sql(self):
         sql = """
                  SELECT %s
                  FROM %s
                  WHERE %s
-             """ % (self.get_select_name(), self.get_table_name(), self.get_where_list())
+             """ % (self.get_select_name(), self.get_table_name(), self.where_list.get_where_list())
         return sql
 
     def get_row_values(self):
@@ -73,16 +83,25 @@ class Cell(object):
         return base_dao.select_one_cell(self.get_sql())
 
 
-class CellWithOrders(Cell):
-    def __init__(self, select_name, table_name, where_list, field, orders):
-        super(CellWithOrders, self).__init__(select_name, table_name, where_list)
-        self.field = field
-        self.orders = orders
+class CellOrder(object):
+    def __init__(self, item, ids):
+        self.item = item
+        self.ids = ids
 
     def get_sql(self):
-        orders_str = str_util.list_to_str(self.orders, left_symbol="'", right_symbol="'")
-        sql = "%s and %s in (%s) order by Field(%s, %s)" \
-              % (super(CellWithOrders, self).get_sql(), self.field, orders_str, self.field, orders_str)
+        orders_str = str_util.list_to_str(self.ids, left_symbol="'", right_symbol="'")
+        sql = "%s in (%s) order by Field(%s, %s)" \
+              % (self.item, orders_str, self.item, orders_str)
+        return sql
+
+
+class CellWithOrders(Cell):
+    def __init__(self, select_name, table_name, where_list, order):
+        super(CellWithOrders, self).__init__(select_name, table_name, where_list)
+        self.order = order
+
+    def get_sql(self):
+        sql = "%s and %s" % (super(CellWithOrders, self).get_sql(), self.order.get_sql())
         return sql
 
 
@@ -104,7 +123,7 @@ class RowSeriesCell(SeriesCell):
     def get_values(self):
         result = []
         for xid in self.xids:
-            self.cell.set_where_value(self.index, xid)
+            self.cell.set_where_value(xid)
             result.extend(self.cell.get_row_values())
         return result
 
@@ -117,12 +136,13 @@ class ColSeriesCell(SeriesCell):
     def get_values(self):
         result = []
         for xid in self.xids:
-            self.cell.set_where_value(self.index, xid)
+            self.cell.set_where_value(xid)
             result.append(self.cell.get_row_values())
         return result
 
 
 # [[], [], [], ...]
+@DeprecationWarning
 class BlockSeriesCell(RowSeriesCell):
     def __init__(self, cell, xids, yids):
         super(BlockSeriesCell, self).__init__(cell, yids, index=1)
@@ -136,6 +156,7 @@ class BlockSeriesCell(RowSeriesCell):
         return result
 
 
+@DeprecationWarning
 class DataRows(object):
     @staticmethod
     def rows_to_list(rows):
@@ -163,6 +184,7 @@ class DataRows(object):
         return result
 
 
+@DeprecationWarning
 class TableRows(object):
     def __init__(self, first_row, first_col, *data_rows):
         self.first_row = first_row
@@ -185,6 +207,6 @@ if __name__ == '__main__':
     exam_where = Where('examId', '8c4646637f44489c9ba9333e580fe9d0')
     subject_where = Where('subjectId', 121)
     district_where = Where('districtId', '9')
-
-    cellt = Cell(["avg", "num_nz"], "qa_district_dimen", [exam_where, subject_where, subject_where])
+    where_list = WhereList([exam_where, subject_where], district_where)
+    cellt = Cell(["avg", "num_nz"], "qa_district_dimen", where_list)
     print(cellt.get_value())

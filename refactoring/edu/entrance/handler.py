@@ -83,6 +83,9 @@ class Gradation(object):
     def get_subject_index(self, subject_id):
         return self.subject_ids.index(subject_id)
 
+    def get_subject_name_by_id(self, subject_id):
+        return self.subject_names[self.get_subject_index(subject_id)]
+
 
 class Exam(object):
     SPECIAL = 1
@@ -93,7 +96,7 @@ class Exam(object):
         # self.gradation = Gradation()
         self.exam_id = exam_id
         self.exam_nick = self.get_exam_nick()
-
+        self.base_student = base_student
         self.school_table = table_config.get_school_sum_table(table_config.QA_CODE)
         if base_student == Exam.SPECIAL:
             self.class_table = table_config.get_class_sum_table(table_config.QA_ZK_CODE)
@@ -115,12 +118,24 @@ class Exam(object):
             self.exam_diff_ids.append(self.get_exam_diff_ids(subject_id))
 
         self.distribution_ids = []
+        self.distribution_names = []
+        self.subject_distribution_type = []
         distribution = Distribution(self.exam_nick, "总分")
         self.count = distribution.get_count()
+
+        self.subject_totals = []
+        total = Total(self.exam_nick, "总分")
+        self.subject_totals.append(total.get_total())
+
+        self.subject_distribution_type.append(distribution.get_distributions()[0])
         self.distribution_ids.append(distribution.get_ids())
+        self.distribution_names.append(distribution.get_names())
         for subject_name in gradation.subject_names:
             distribution.subject_name = subject_name
             self.distribution_ids.append(distribution.get_ids())
+            self.subject_distribution_type.append(distribution.get_distributions()[0])
+            self.distribution_names.append(distribution.get_names())
+            self.subject_totals.append(total.get_total())
 
     def get_school_ids(self):
         return qam_dao.get_all_school_ids_order(self.gradation.grade_lev, self.exam_id, self.school_table)
@@ -186,7 +201,36 @@ class Exam(object):
         if subject_id is None:
             return self.distribution_ids[0]
         else:
-            return self.distribution_ids[self.gradation.get_subject_index(subject_id)]
+            return self.distribution_ids[self.gradation.get_subject_index(subject_id) + 1]
+
+    def get_subject_distribution_names(self, subject_id=None):
+        if subject_id is None:
+            return self.distribution_names[0]
+        else:
+            return self.distribution_names[self.gradation.get_subject_index(subject_id) + 1]
+
+    def get_subject_distribution_type(self, subject_id=None):
+        if subject_id is None:
+            return self.subject_distribution_type[0]
+        else:
+            return self.subject_distribution_type[self.gradation.get_subject_index(subject_id) + 1]
+
+    def get_subject_total(self, subject_id=None):
+        if subject_id is None:
+            return self.subject_totals[0]
+        else:
+            return self.subject_totals[self.gradation.get_subject_index(subject_id) + 1]
+
+    def get_std_school_names(self, school_id):
+        result = []
+        for index, value in enumerate(self.school_ids):
+            result.append("学校%d" % (index + 1))
+        index = self.get_school_index(school_id)
+        result[index] = self.school_names[index]
+        return result
+
+    def get_school_index(self, school_id):
+        return self.school_ids.index(school_id)
 
 
 class Range(object):
@@ -287,6 +331,34 @@ class Distribution(object):
         return Distribution.SUBJECT_DISTRIBUTIONS[self.exam_nick][self.subject_name][2]
 
 
+class Total(object):
+    SUBJECT_TOTAL = {
+        "初三一模": {
+            "语文": 150,
+            "数学": 150,
+            "英语": 150,
+            "物理": 100,
+            "化学": 100,
+            "总分": 650,
+        },
+        "初三二模": {
+            "语文": 150,
+            "数学": 150,
+            "英语": 150,
+            "物理": 90,
+            "化学": 60,
+            "总分": 600,
+        },
+    }
+
+    def __init__(self, exam_nick, subject_name):
+        self.exam_nick = exam_nick
+        self.subject_name = subject_name
+
+    def get_total(self):
+        return Total.SUBJECT_TOTAL[self.exam_nick][self.subject_name]
+
+
 class Where(object):
     DISTRICT_CODE = 1
     SCHOOL_CODE = 2
@@ -313,67 +385,67 @@ class Where(object):
         self.font_subject = qa.Where("font.subjectId")
         self.behind_subject = qa.Where("behind.subjectId")
 
-        self.varied = None
-        self.fixed = None
-
-    def set_district_varied(self, district_code):
+    def get_varied_district(self, district_code):
         if district_code == Where.DISTRICT_CODE:
-            self.varied = self.district
+            return self.district
         elif district_code == Where.SCHOOL_CODE:
-            self.varied = self.school
+            return self.school
         elif district_code == Where.CLASS_CODE:
-            self.varied = [self.school, self.class_t]
+            return [self.school, self.class_t]
 
-    def set_greater_less_equal_varied(self):
-        self.varied = [self.greater, self.less_equal]
+    def get_varied_greater_less_equal(self):
+        return [self.greater, self.less_equal]
 
-    def set_greater_equal_less_equal_varied(self):
-        self.varied = [self.greater_equal, self.less_equal]
+    def get_varied_greater_equal_less_equal(self):
+        return [self.greater_equal, self.less_equal]
 
-    def set_exam_diff_varied(self):
-        self.varied = [self.font_exam, self.behind_exam]
+    def get_varied_exam_diff(self):
+        return [self.font_exam, self.behind_exam]
 
-    def set_exam_fixed(self):
-        self.fixed = self.fixed_exam
+    def get_varied_exam(self):
+        return self.varied_exam
 
-    def set_subject_fixed(self, subject_id):
+    def get_fixed_exam(self):
+        return self.fixed_exam
+
+    def get_fixed_subject(self, subject_id):
         self.subject.set_value(subject_id)
+        return self.subject
 
-    def set_district_fixed(self, district_code, value):
-        self.set_district_varied(district_code)
-        self.fixed = self.varied
-        if isinstance(self.fixed, list):
-            for i, w in enumerate(self.fixed):
-                w.set_value(value[i])
+    def get_fixed_district(self, district_code, value):
+        result = self.get_varied_district(district_code)
+        qa.CellWhere.set_value_static(result, value)
+        return result
+
+    def get_fixed_district_subject(self, district_code, value, subject_id=None):
+        result = self.get_fixed_district(district_code, value)
+        if subject_id is None:
+            return result
+
+        if district_code == Where.CLASS_CODE:
+            result.append(self.get_fixed_subject(subject_id))
+            return result
         else:
-            self.fixed.set_value(value)
+            return [result, self.get_fixed_subject(subject_id)]
 
-    def set_district_subject_fixed(self, district_code, value, subject_id=None):
-        self.set_district_fixed(district_code, value)
-        self.fixed = [self.fixed]
-        self.set_other_subject(subject_id)
+    def get_fixed_exam_subject(self, subject_id=None):
+        result = self.fixed_exam
+        if subject_id is None:
+            return result
 
-    def set_exam_subject_fixed(self, subject_id=None):
-        self.fixed = [self.fixed_exam]
-        self.set_other_subject(subject_id)
+        return [result, self.get_fixed_subject(subject_id)]
 
-    def set_school_diff_subject_fixed(self, school_id, subject_id):
+    def get_fixed_diff_school_subject(self, school_id, subject_id):
         self.font_school.set_value(school_id)
         self.font_subject.set_value(subject_id)
         self.behind_school.set_value(school_id)
         self.behind_subject.set_value(subject_id)
-        self.fixed = [self.font_school, self.font_subject, self.behind_school,
-                      self.behind_subject]
+        return [self.font_school, self.font_subject, self.behind_school,
+                self.behind_subject]
 
-    def set_other_subject(self, subject_id):
-        if subject_id is not None:
-            self.set_subject_fixed(subject_id)
-            self.fixed.append(self.subject)
-
-    def set_exam_subject_count_fixed_where(self, count):
-        self.set_exam_subject_fixed()
+    def get_exam_count_fixed_where(self, count):
         self.count.set_value(count)
-        self.fixed.append(self.count)
+        return [self.fixed_exam, self.count]
 
 
 if __name__ == '__main__':

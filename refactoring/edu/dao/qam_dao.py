@@ -121,3 +121,32 @@ def get_exam_ids(enroll_year, grade_lev):
         ORDER BY gradeId, xq, examType;
     """ % (enroll_year, grade_lev)
     return list_util.to_a_list(base_dao.select(sql))
+
+
+def get_dimen_description_by_exam(exam_id, subject_id):
+    where_list = qa.CellWhere(qa.Where("examId", exam_id), qa.Where("subjectId", subject_id))
+    cell = qa.Cell(item_config.DIMEN_DESC_ITEMS, "qam_dimen_info", where_list)
+
+    values = cell.get_row_values()
+    values.reverse()
+    for index, value in enumerate(values):
+        if value is not None and value != '':
+            result = values[index:]
+            result.reverse()
+            return result
+
+
+def get_dimen_description_by_exams(exam_ids, subject_id):
+    result = get_dimen_description_by_exam(exam_ids[0], subject_id)
+    for exam_id in exam_ids[1:]:
+        temp = get_dimen_description_by_exam(exam_id, subject_id)
+        if len(result) > len(temp):
+            result = temp
+    return result
+
+
+if __name__ == '__main__':
+    print(get_dimen_description_by_exam("8c4646637f44489c9ba9333e580fe9d0", 121))
+    print(get_dimen_description_by_exams(
+        ['3f2a81437b944569aacb675a6544b2f3', '7c5315bb7c7a4cdb854d2893bfaebce5', '661cb10d97ae48c4a7207f1da9f6acdd',
+         '8c4646637f44489c9ba9333e580fe9d0'], 121))

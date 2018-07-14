@@ -32,17 +32,13 @@ class Where(object):
         return self.add(other)
 
 
-class MainWhere(object):
-    def __init__(self, fixed, varied):
+class CellWhere(object):
+    def __init__(self, fixed=None, varied=None):
         self.fixed = fixed
         self.varied = varied
 
     def set_value(self, value):
-        if isinstance(self.varied, list):
-            for i, w in enumerate(self.varied):
-                w.set_value(value[i])
-        else:
-            self.varied.set_value(value)
+        CellWhere.set_value_static(self.varied, value)
 
     def get_where_list(self):
         where_list = [self.varied]
@@ -52,9 +48,17 @@ class MainWhere(object):
             where_list.append(self.fixed)
         return str_util.list_to_str(list_util.to_a_list(where_list), symbol=" AND")
 
+    @staticmethod
+    def set_value_static(where, value):
+        if isinstance(where, list):
+            for i, w in enumerate(where):
+                w.set_value(value[i])
+        else:
+            where.set_value(value)
+
 
 class Cell(object):
-    def __init__(self, select_name, table_name, where_list):
+    def __init__(self, select_name=None, table_name=None, where_list=None):
         self.select_name = select_name
         self.table_name = table_name
         self.where_list = where_list
@@ -84,7 +88,7 @@ class Cell(object):
 
 
 class CellOrder(object):
-    def __init__(self, item, ids):
+    def __init__(self, item=None, ids=None):
         self.item = item
         self.ids = ids
 
@@ -94,9 +98,13 @@ class CellOrder(object):
               % (self.item, orders_str, self.item, orders_str)
         return sql
 
+    def set(self, item, ids):
+        self.item = item
+        self.ids = ids
+
 
 class CellWithOrders(Cell):
-    def __init__(self, select_name, table_name, where_list, order):
+    def __init__(self, select_name=None, table_name=None, where_list=None, order=None):
         super(CellWithOrders, self).__init__(select_name, table_name, where_list)
         self.order = order
 
@@ -106,19 +114,22 @@ class CellWithOrders(Cell):
 
 
 class SeriesCell(object):
-    def __init__(self, cell, ids, index):
+    def __init__(self, cell=None, ids=None):
         self.cell = cell
         self.xids = ids
-        self.index = index
 
     def get_values(self):
         return []
 
+    def set(self, cell, ids):
+        self.cell = cell
+        self.xids = ids
+
 
 # [[]]
 class RowSeriesCell(SeriesCell):
-    def __init__(self, cell, ids, index=0):
-        super(RowSeriesCell, self).__init__(cell, ids, index)
+    def __init__(self, cell=None, ids=None):
+        super(RowSeriesCell, self).__init__(cell, ids)
 
     def get_values(self):
         result = []
@@ -130,8 +141,8 @@ class RowSeriesCell(SeriesCell):
 
 # [[], [], [], ...]
 class ColSeriesCell(SeriesCell):
-    def __init__(self, cell, ids):
-        super(ColSeriesCell, self).__init__(cell, ids, 0)
+    def __init__(self, cell=None, ids=None):
+        super(ColSeriesCell, self).__init__(cell, ids)
 
     def get_values(self):
         result = []
@@ -207,6 +218,6 @@ if __name__ == '__main__':
     exam_where = Where('examId', '8c4646637f44489c9ba9333e580fe9d0')
     subject_where = Where('subjectId', 121)
     district_where = Where('districtId', '9')
-    where_list = WhereList([exam_where, subject_where], district_where)
-    cellt = Cell(["avg", "num_nz"], "qa_district_dimen", where_list)
+    main_where = MainWhere([exam_where, subject_where], district_where)
+    cellt = Cell(["avg", "num_nz"], "qa_district_dimen", main_where)
     print(cellt.get_value())

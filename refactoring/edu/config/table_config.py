@@ -68,7 +68,7 @@ def get_subject_score_table_name(table_code, district_code):
     elif district_code == SCHOOL_CODE:
         return get_school_dimen_table(table_code)
     elif district_code == CLASS_CODE:
-        return get_class_dimen_table()
+        return get_class_dimen_table(table_code)
     elif district_code == STU_CODE:
         return get_stu_dimen_table(table_code)
 

@@ -4,8 +4,6 @@ from decimal import *
 from openpyxl import Workbook
 import os
 
-import work.edu.util.SqlUtil as sqlUtil
-
 
 # 创建一个表格
 def createExcel():
@@ -57,29 +55,7 @@ def adjustAlignmentAndColumnWidth(rows, ws):
         ws.column_dimensions[get_column_letter(i + 1)].width = (column_width + 2) * 1.75
 
 
-# sql语句加上firstRow 写进一个sheet
-def putDataToSheetBySqlAndFirstRow(ws, sql, firstRow):
-    rows = sqlUtil.getRowsBySqlAndFirstRow(sql, firstRow)
-    putRowsToSheet(rows, ws)
-    adjustAlignmentAndColumnWidth(rows, ws)
 
-
-# 使用一条sql语句，创建一张sheet，一张excel
-# 只需要提供sql语句、标题、sheet名字、excel名字和创建路径即可
-def createOneExcelAndOneSheetAndOneSql(sql, firstRow, sheetName, path, wbName):
-    wb = createExcel()
-    ws = creatSheet(wb, True, sheetName)
-    putDataToSheetBySqlAndFirstRow(ws, sql, firstRow)
-    filename = path + "\\" + wbName + ".xlsx"
-    wb.save(filename)
-
-
-def createDir(path):
-    if os.path.exists(path):
-        print(" “" + path + '” 已经存在')
-    else:
-        print("创建名为 “" + path + '” 的文件夹...')
-        os.makedirs(path)
 
 
 if __name__ == '__main__':

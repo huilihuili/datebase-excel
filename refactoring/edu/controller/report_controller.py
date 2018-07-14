@@ -7,6 +7,19 @@ import refactoring.edu.config.first_row_config as first_row_config
 import refactoring.edu.entrance.handler as handler
 import datetime
 import numpy as np
+import refactoring.edu.util.plt_util as plt_util
+import refactoring.edu.util.excel_util as excel_util
+import os
+import threading
+
+
+def createDir(path):
+    if os.path.exists(path):
+        print(" “" + path + '” 已经存在')
+    else:
+        print("创建名为 “" + path + '” 的文件夹...')
+        os.makedirs(path)
+
 
 DISTRICT_CODE = 1
 SCHOOL_CODE = 2
@@ -31,6 +44,15 @@ def get_subject_code(subject_id):
 def print_rows(rows):
     for row in rows:
         print(row)
+
+
+def box(titles, school_stu, names, path):
+    plt_util.boxplot(titles, school_stu, lables=names, path=path)
+
+
+def scatter(titles, x_value, y_value, names, lines, point_size, path):
+    plt_util.scatter(titles, x_value, y_value, texts=names, xDif=- 0.001,
+                     yDif=0.1, lines=lines, points=point_size, path=path)
 
 
 class Value(object):
@@ -205,34 +227,6 @@ class Table(object):
         if self.base_student == self.exam.SPECIAL:
             self.get_distribution(QA_ZK_CODE)
 
-    def get_subject_std(self, table_code, subject_id=None):
-        title = self.get_subject_title(table_code, "标准差-平均分得分率二维图", subject_id)
-        item = item_config.AVG_RATIO_ITEM % self.exam.get_subject_total(subject_id)
-        print(title)
-        print(["得分率"] + self.value.get_district_one_row(item, table_code, SCHOOL_CODE))
-        item = item_config.NUM_ITEM
-        print(["人数"] + self.value.get_district_one_row(item, table_code, SCHOOL_CODE))
-        item = item_config.SUM_ITEM
-        school_stu = self.value.get_school_stu(item, table_code, subject_id)
-        print(["箱形图"] + school_stu)
-        std = []
-        for value in school_stu:
-            std.append(round(np.std(value, ddof=1), 2))
-        print(["标准差"] + std)
-
-    def get_std(self, table_code):
-        self.get_subject_std(table_code)
-        for subject_id in self.gradation.subject_ids:
-            self.get_subject_std(table_code, subject_id)
-
-    def get_all_std(self):
-        print(["学校"] + self.exam.school_names)
-        for school_id in self.exam.school_ids:
-            print(["学校"] + self.exam.get_std_school_names(school_id))
-        self.get_std(QA_CODE)
-        if self.base_student == self.exam.SPECIAL:
-            self.get_std(QA_ZK_CODE)
-
     def get_district_first_col(self, table_code):
         district_names = self.gradation.district_names
         school_names = self.exam.school_names
@@ -402,6 +396,84 @@ class Table(object):
         print_rows(list_util.combine_values_by_col(first_col, class_sum, class_subject))
 
 
+class Pic(object):
+    def __init__(self, value):
+        self.value = value
+        self.exam = value.exam
+        self.gradation = value.gradation
+        self.base_student = self.exam.base_student
+        self.names = [self.exam.school_names]
+        for school_id in self.exam.school_ids:
+            self.names.append(self.exam.get_std_school_names(school_id))
+
+    def get_subject_title(self, table_code, function, subject_id=None):
+        if table_code == QA_CODE:
+            extra = first_row_config.REAL_CHART_EXTRA_TITLE
+        elif table_code == QA_ZK_CODE:
+            if self.gradation.grade_lev == 2:
+                extra = first_row_config.JUNIOR_CHART_EXTRA_TITLE
+        if subject_id is None:
+            title = "区%s总分%s" % (extra, function)
+        else:
+            title = "区%s%s%s" % (extra, self.gradation.get_subject_name_by_id(subject_id), function)
+        return title
+
+    def get_subject_std(self, table_code, subject_id=None):
+        item = item_config.AVG_RATIO_ITEM % self.exam.get_subject_total(subject_id)
+        x_values = self.value.get_district_one_row(item, table_code, SCHOOL_CODE)
+
+        item = item_config.NUM_ITEM
+        point_size = self.value.get_district_one_row(item, table_code, SCHOOL_CODE)
+
+        item = item_config.SUM_ITEM
+        school_stu = self.value.get_school_stu(item, table_code, subject_id)
+
+        y_values = []
+        for value in school_stu:
+            y_values.append(round(np.std(value, ddof=1), 2))
+        title = self.get_subject_title(table_code, "箱形图", subject_id)
+        titles = [title, "学校", "分数"]
+
+        directory = r"E:\reportData\junior\区"
+        path = r"%s\%s.png" % (directory, title)
+        box(titles, school_stu, self.names[0], path)
+
+        for index, name in enumerate(self.names[1:]):
+            directory = r"E:\reportData\junior\%s" % name[index]
+            path = r"%s\%s.png" % (directory, title)
+            box(titles, school_stu, name, path)
+
+        title = self.get_subject_title(table_code, "标准差-平均分得分率二维图", subject_id)
+        titles = [title, "平均得分率", "标准差"]
+        lines = [['vline', (max(x_values) + min(x_values)) / 2],
+                 ['hline', (max(y_values) + min(y_values)) / 2]]
+        directory = r"E:\reportData\junior\区"
+        path = r"%s\%s.png" % (directory, title)
+        scatter(titles, x_values, y_values, self.names[0], lines, point_size, path)
+        plt_util.scatter(titles, x_values, y_values, texts=self.names[0], lines=lines, xDif=- 0.001,
+                         yDif=0.1, points=point_size,
+                         path=r"%s\%s.png" % (directory, title))
+        for index, name in enumerate(self.names[1:]):
+            directory = r"E:\reportData\junior\%s" % name[index]
+            path = r"%s\%s.png" % (directory, title)
+            scatter(titles, x_values, y_values, name, lines, point_size, path)
+
+    def get_std(self, table_code):
+        self.get_subject_std(table_code)
+        for subject_id in self.gradation.subject_ids:
+            self.get_subject_std(table_code, subject_id)
+
+    def get_all_std(self):
+        directory = r"E:\reportData\junior\区"
+        createDir(directory)
+        for index, name in enumerate(self.names[1:]):
+            directory = r"E:\reportData\junior\%s" % name[index]
+            createDir(directory)
+        self.get_std(QA_CODE)
+        if self.base_student == self.exam.SPECIAL:
+            self.get_std(QA_ZK_CODE)
+
+
 def value_test():
     d1 = datetime.datetime.now()
 
@@ -467,19 +539,20 @@ def table_test():
     where = handler.Where(exam.exam_id)
     value = Value(exam, gradation, where)
 
-    table = Table(value)
-    school_id = exam.school_ids[0]
-    subject_id = gradation.subject_ids[0]
-    table.get_all_distribution()
-    table.get_all_std()
-    table.get_all_district_school_avg_rank()
-    table.get_all_school_avg_rank(school_id)
-    table.get_all_district_num()
-    table.get_all_school_num(school_id)
-    table.get_all_district_line()
-    table.get_all_school_line(school_id)
-    table.get_all_district_dimen_avg(subject_id)
-    table.get_all_district_class_avg_rank()
+    # table = Table(value)
+    # school_id = exam.school_ids[0]
+    # subject_id = gradation.subject_ids[0]
+    # table.get_all_distribution()
+    # table.get_all_district_school_avg_rank()
+    # table.get_all_school_avg_rank(school_id)
+    # table.get_all_district_num()
+    # table.get_all_school_num(school_id)
+    # table.get_all_district_line()
+    # table.get_all_school_line(school_id)
+    # table.get_all_district_dimen_avg(subject_id)
+    # table.get_all_district_class_avg_rank()
+    pic = Pic(value)
+    pic.get_all_std()
     d2 = datetime.datetime.now()
     print(d2 - d1)
 

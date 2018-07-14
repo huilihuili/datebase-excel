@@ -27,7 +27,6 @@ def pltLines(lines):
     if len(lines) != 0:
         for line in lines:
             type, value = line
-
             if type == "vline":
                 plt.axvline(value, ls='--', color="r")
             elif type == "hline":
@@ -63,7 +62,7 @@ def pltAfter(titles, isShow, isRotate, path, ax, lables):
 
 def scatter(titles, xRows, yRows, lines=[], points=[], isShow=False, isRotate=True, texts=[], xDif=-1,
             yDif=-1, path="", textSize=0):
-    print('画一张散点图--->%s' % (titles[0]))
+    print('画一张散点图--->%s' % path)
     ax = pltBefore(scatter_width, scatter_height)
     if len(points) != 0:
         ax.scatter(xRows, yRows, s=points)
@@ -71,13 +70,14 @@ def scatter(titles, xRows, yRows, lines=[], points=[], isShow=False, isRotate=Tr
         ax.scatter(xRows, yRows)
     pltLines(lines)
     pltText(xRows, yRows, xDif, yDif, texts, textSize)
+
     xmajorFormatter = FormatStrFormatter('%.2f')
     ax.xaxis.set_major_formatter(xmajorFormatter)
     pltAfter(titles, isShow, isRotate, path, ax, None)
 
 
 def boxplot(titles, rows, lables=None, isShow=False, isRotate=True, path=""):
-    print('画一张箱形图--->%s' % (titles[0]))
+    print('画一张箱形图--->%s' % path)
     ax = pltBefore(box_width, box_height)
     ax.boxplot(rows)
     pltAfter(titles, isShow, isRotate, path, ax, lables)

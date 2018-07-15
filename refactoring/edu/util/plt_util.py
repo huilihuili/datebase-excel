@@ -1,5 +1,6 @@
 import matplotlib.pyplot as plt
 from matplotlib.ticker import FormatStrFormatter
+import threading
 
 plt.rcParams['font.sans-serif'] = ['SimHei']  # 用来正常显示中文标签
 
@@ -16,11 +17,11 @@ def setTitles(titles):
     plt.ylabel(titles[2])
 
 
-def pltShowAndSave(isShow, path):
+def pltShowAndSave(fig, isShow, path):
     if isShow:
-        plt.show()
+        fig.show()
     if path != "":
-        plt.savefig(path, bbox_inches='tight')
+        fig.savefig(path, bbox_inches='tight')
 
 
 def pltLines(lines):
@@ -42,28 +43,23 @@ def pltText(xRows, yRows, xDif, yDif, texts, textSize):
                 plt.text(x + xDif, yRows[i] + yDif, texts[i], ha='center', va='bottom')
 
 
-def pltBefore(width, height):
-    fig = plt.figure()
-    fig.set_size_inches(width, height)
-    ax = fig.add_subplot(111)
-    return ax
-
-
-def pltAfter(titles, isShow, isRotate, path, ax, lables):
+def pltAfter(fig, titles, isShow, isRotate, path, ax, lables):
     setTitles(titles)
     if lables is not None:
         if isRotate:
             ax.set_xticklabels(lables, rotation=90)
         else:
             ax.set_xticklabels(lables)
-    pltShowAndSave(isShow, path)
+    pltShowAndSave(fig, isShow, path)
     plt.close()
 
 
-def scatter(titles, xRows, yRows, lines=[], points=[], isShow=False, isRotate=True, texts=[], xDif=-1,
-            yDif=-1, path="", textSize=0):
+def scatter(titles, xRows, yRows, path="", lines=[], points=[], isShow=False, isRotate=True, texts=[], xDif=-1,
+            yDif=-1, textSize=0):
     print('画一张散点图--->%s' % path)
-    ax = pltBefore(scatter_width, scatter_height)
+    fig = plt.figure()
+    fig.set_size_inches(scatter_width, scatter_height)
+    ax = fig.add_subplot(111)
     if len(points) != 0:
         ax.scatter(xRows, yRows, s=points)
     else:
@@ -73,14 +69,16 @@ def scatter(titles, xRows, yRows, lines=[], points=[], isShow=False, isRotate=Tr
 
     xmajorFormatter = FormatStrFormatter('%.2f')
     ax.xaxis.set_major_formatter(xmajorFormatter)
-    pltAfter(titles, isShow, isRotate, path, ax, None)
+    pltAfter(fig, titles, isShow, isRotate, path, ax, None)
 
 
 def boxplot(titles, rows, lables=None, isShow=False, isRotate=True, path=""):
     print('画一张箱形图--->%s' % path)
-    ax = pltBefore(box_width, box_height)
+    fig = plt.figure()
+    fig.set_size_inches(box_width, box_height)
+    ax = fig.add_subplot(111)
     ax.boxplot(rows)
-    pltAfter(titles, isShow, isRotate, path, ax, lables)
+    pltAfter(fig, titles, isShow, isRotate, path, ax, lables)
 
 
 if __name__ == '__main__':

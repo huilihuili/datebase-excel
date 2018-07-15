@@ -2,6 +2,7 @@ from openpyxl.utils import get_column_letter
 from openpyxl.styles import Alignment
 from decimal import *
 from openpyxl import Workbook
+from openpyxl import load_workbook
 import os
 
 
@@ -9,6 +10,11 @@ import os
 def createExcel():
     wb = Workbook()
     return wb;
+
+
+def load_excel(path):
+    wb = load_workbook(path)
+    return wb
 
 
 # 创建一个sheet
@@ -24,6 +30,13 @@ def creatSheet(wb, isFirst, sheetName):
 
 # 把rows写进sheet
 def putRowsToSheet(rows, ws):
+    for row in rows:
+        ws.append(row)
+    adjustAlignmentAndColumnWidth(rows, ws)
+
+
+def put_rows_to_sheet(wb, title, rows):
+    ws = creatSheet(wb, False, title)
     for row in rows:
         ws.append(row)
     adjustAlignmentAndColumnWidth(rows, ws)
@@ -55,17 +68,14 @@ def adjustAlignmentAndColumnWidth(rows, ws):
         ws.column_dimensions[get_column_letter(i + 1)].width = (column_width + 2) * 1.75
 
 
-
-
-
 if __name__ == '__main__':
-    wb = createExcel()
+    wb1 = createExcel()
     rows = [
         ['考试', '初中预备', '初一期末', '初二期末', '初三期末', ],
         ['排名', 32, 30, 30, 27, ],
         ['区平均分', 80.28, 79.04, 74.32, 105.88, ],
         ['同类平均分', 81.28, 72.04, 73.32, 104.88, ],
     ]
-    ws = creatSheet(wb, True, "测试")
+    ws = creatSheet(wb1, True, "测试")
     putRowsToSheet(rows, ws)
-    wb.save("test.xlsx")
+    wb1.save("test.xlsx")

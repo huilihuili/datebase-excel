@@ -116,11 +116,17 @@ class Exam(object):
         self.exam_nicks = []
         self.exam_diff_ids = []
         self.exam_diff_names = []
+        self.exam_subject_dimen_description = []
+        self.exam_diff_subject_dimen_desctiption = []
         for subject_id in gradation.subject_ids:
             self.exam_ids.append(self.get_exam_ids(subject_id))
             self.exam_nicks.append(self.get_exam_nicks(subject_id))
             self.exam_diff_ids.append(self.get_exam_diff_ids(subject_id))
             self.exam_diff_names.append(self.get_exam_diff_names(subject_id))
+            self.exam_subject_dimen_description.append(
+                qam_dao.get_dimen_description_by_exam(self.exam_id, subject_id))
+            self.exam_diff_subject_dimen_desctiption.append(
+                qam_dao.get_dimen_description_by_exams(self.get_exam_ids(subject_id), subject_id))
 
         self.distribution_ids = []
         self.distribution_names = []

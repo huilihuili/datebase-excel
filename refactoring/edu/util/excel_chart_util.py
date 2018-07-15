@@ -8,7 +8,7 @@ from openpyxl.chart.text import RichText
 from openpyxl.drawing.text import Paragraph, ParagraphProperties, CharacterProperties, Font
 from openpyxl.chart.label import DataLabelList
 
-import work.edu.util.ExcelUtil as excelUtil
+import refactoring.edu.util.excel_util as excel_util
 
 cpLegend = CharacterProperties(sz=500, b=False)
 cpAxisTitle = CharacterProperties(sz=600, b=True)
@@ -130,8 +130,8 @@ def createChart(wb, chartType, readType, rows, titles,
                 max_row=-1, max_col=-1,
                 min_row=1, min_col=1,
                 isDesc=False, isMark=True, isLineWidth=True, isDataLable=True):
-    ws = excelUtil.creatSheet(wb, False, titles[0])
-    excelUtil.putRowsToSheet(rows, ws)
+    ws = excel_util.creatSheet(wb, False, titles[0])
+    excel_util.putRowsToSheet(rows, ws)
 
     chart = createChartByType(chartType)
 
@@ -160,8 +160,8 @@ def createTwoAxisChart(wb, readType, rows, titles, lineNumber,
                        max_row=-1, max_col=-1,
                        min_row=1, min_col=1,
                        isDesc=True, isMark=True, isLineWidth=True, isDataLable=True):
-    ws = excelUtil.creatSheet(wb, False, titles[0])
-    excelUtil.putRowsToSheet(rows, ws)
+    ws = excel_util.creatSheet(wb, False, titles[0])
+    excel_util.putRowsToSheet(rows, ws)
 
     if max_row == -1:
         max_row = len(rows)
@@ -209,7 +209,7 @@ if __name__ == '__main__':
     #     ['初三期末', 32, 105.88, 79.04, ],
     # ]
 
-    wb = excelUtil.createExcel()
+    wb = excel_util.createExcel()
     readType = 'row'
     rows = [
         ['考试', '初中预备', '初一期末', '初二期末', '初三期末', ],

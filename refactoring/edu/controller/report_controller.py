@@ -395,6 +395,156 @@ class Table(object):
         class_subject = list_util.cross_several_row(class_subject_avg, class_subject_rank)
         print_rows(list_util.combine_values_by_col(first_col, class_sum, class_subject))
 
+    def get_school_subject_dimen_ratio(self, school_id, subject_id):
+        index = self.gradation.get_subject_index(subject_id)
+        school_index = self.exam.get_school_index(school_id)
+        school_type = self.exam.school_types[school_index]
+        district_index = self.gradation.get_district_index(school_type)
+
+        first_row = self.exam_subject_dimen_description[index]
+        dimen_len = len(first_row)
+        first_row.insert(0, "学校")
+        print(first_row)
+        table_code = QA_CODE
+        if self.exam.base_student == handler.Exam.SPECIAL:
+            table_code = QA_ZK_CODE
+
+        first_col = ['区', '同类学校', self.exam.school_names[school_index]]
+        item = item_config.DIMEN_RATIO_ITEMS[:dimen_len]
+        district_dimen_ratio = self.value.get_exam_dimen(item, table_code, DISTRICT_CODE, subject_id)
+        school_dimen_ratio = self.value.get_exam_dimen(item, table_code, SCHOOL_CODE, subject_id)
+        values = district_dimen_ratio[0:1] + district_dimen_ratio[
+                                             district_index:district_index + 1] + school_dimen_ratio[
+                                                                                  school_index:school_index + 1]
+        print_rows(list_util.combine_values_by_col(first_col, values))
+
+    def get_class_avg_rank(self, class_id):
+        class_index = self.exam.get_class_index(class_id)
+        school_index = self.exam.get_school_index(class_id[0])
+        table_code = QA_CODE
+        if self.exam.base_student == handler.Exam.SPECIAL:
+            table_code = QA_ZK_CODE
+
+        item = item_config.AVG_ITEM
+        class_subject_avg = self.value.get_exam_subject(item, table_code, CLASS_CODE)
+        class_sum_avg = self.value.get_district_one_row(item, table_code, CLASS_CODE)
+        school_subject_avg = self.value.get_exam_subject(item, table_code, SCHOOL_CODE)
+        school_sum_avg = self.value.get_district_one_row(item, table_code, SCHOOL_CODE)
+        district_subject_avg = self.value.get_exam_subject(item, table_code, DISTRICT_CODE)
+        district_sum_avg = self.value.get_district_one_row(item, table_code, DISTRICT_CODE)
+
+        item = item_config.RANK_ITEM
+        class_subject_rank = self.value.get_exam_subject(item, table_code, CLASS_CODE)
+        class_sum_rank = self.value.get_district_one_row(item, table_code, CLASS_CODE)
+
+        first_row = first_row_config.CLASS_AVG_OF_SUM_SUBJECT
+        first_col = ['排名', '班级平均分', '学校平均分', '区平均分']
+        class_rank = list_util.combine_values_by_col(class_sum_rank[class_index:class_index + 1],
+                                                     class_subject_rank[class_index:class_index + 1])
+        class_avg = list_util.combine_values_by_col(class_sum_avg[class_index:class_index + 1],
+                                                    class_subject_avg[class_index:class_index + 1])
+        school_avg = list_util.combine_values_by_col(school_sum_avg[school_index:school_index + 1],
+                                                     school_subject_avg[school_index:school_index + 1])
+        district_avg = list_util.combine_values_by_col(district_sum_avg[0:1], district_subject_avg[0:1])
+
+        print(first_row)
+        print_rows(list_util.combine_values_by_col(first_col, class_rank + class_avg + school_avg + district_avg))
+
+    def get_class_subject_dimen_ratio(self, class_id, subject_id):
+        index = self.gradation.get_subject_index(subject_id)
+        class_index = self.exam.get_class_index(class_id)
+        school_index = self.exam.get_school_index(class_id[0])
+        table_code = QA_CODE
+        if self.exam.base_student == handler.Exam.SPECIAL:
+            table_code = QA_ZK_CODE
+
+        first_row = self.exam_subject_dimen_description[index]
+        dimen_len = len(first_row)
+        first_row.insert(0, "学校")
+
+        first_col = ['班级', '学校', '区']
+        item = item_config.DIMEN_RATIO_ITEMS[:dimen_len]
+        district_dimen_ratio = self.value.get_exam_dimen(item, table_code, DISTRICT_CODE, subject_id)
+        school_dimen_ratio = self.value.get_exam_dimen(item, table_code, SCHOOL_CODE, subject_id)
+        class_dimen_ratio = self.value.get_exam_dimen(item, table_code, CLASS_CODE, subject_id)
+        values = class_dimen_ratio[class_index:class_index + 1] + district_dimen_ratio[0:1] + school_dimen_ratio[
+                                                                                              school_index:school_index + 1]
+        print(first_row)
+        print_rows(list_util.combine_values_by_col(first_col, values))
+
+    def get_school_subject_exams_avg_rank(self, school_id, subject_id):
+        school_index = self.exam.get_school_index(school_id)
+        school_type = self.exam.school_types[school_index]
+        district_index = self.gradation.get_district_index(school_type)
+
+        first_row = self.exam.get_exam_nicks(subject_id)
+        first_row.insert(0, "考试")
+        table_code = QA_CODE
+        if self.exam.base_student == handler.Exam.SPECIAL:
+            table_code = QA_ZK_CODE
+
+        first_col = ['排名', '区平均分', '同类学校平均分', '校平均分']
+        item = item_config.RANK_ITEM
+        school_rank = self.value.get_subject_exam(item, table_code, SCHOOL_CODE, subject_id)
+
+        item = item_config.AVG_ITEM
+        district_avg = self.value.get_subject_exam(item, table_code, DISTRICT_CODE, subject_id)
+        school_avg = self.value.get_subject_exam(item, table_code, SCHOOL_CODE, subject_id)
+
+        values = school_rank[school_index:school_index + 1] + district_avg[0:1] + \
+                 district_avg[district_index:district_index + 1] + school_avg[school_index:school_index + 1]
+
+        print(first_row)
+        print_rows(list_util.combine_values_by_col(first_col, values))
+
+    def get_school_exam_subject_dimen_rank(self, school_id, subject_id):
+        index = self.gradation.get_subject_index(subject_id)
+
+        first_row = self.exam_subject_dimen_description[index]
+        dimen_len = len(first_row)
+        first_row.insert(0, "考试")
+        table_code = QA_CODE
+        if self.exam.base_student == handler.Exam.SPECIAL:
+            table_code = QA_ZK_CODE
+
+        first_col = self.exam.get_exam_nicks(subject_id)
+        item = item_config.DIMEN_RANK_ITEMS[:dimen_len]
+        school_dimen_rank = self.value.get_subject_dimen(item, table_code, SCHOOL_CODE, school_id, subject_id)
+        print(first_row)
+        print_rows(list_util.combine_values_by_col(first_col, school_dimen_rank))
+
+    def get_school_exam_subject_dimen_avg(self, school_id, subject_id):
+        index = self.gradation.get_subject_index(subject_id)
+        first_row = self.exam_subject_dimen_description[index]
+        dimen_len = len(first_row)
+        first_row.insert(0, "考试")
+        table_code = QA_CODE
+        if self.exam.base_student == handler.Exam.SPECIAL:
+            table_code = QA_ZK_CODE
+
+        first_col = self.exam.get_exam_nicks(subject_id)
+        item = item_config.DIMEN_AVG_ITEMS[:dimen_len]
+        school_dimen_rank = self.value.get_subject_dimen(item, table_code, SCHOOL_CODE, school_id, subject_id)
+        print(first_row)
+        print_rows(list_util.combine_values_by_col(first_col, school_dimen_rank))
+
+    def get_school_exam_subject_dimen_rank_diff(self, school_id, subject_id):
+        index = self.gradation.get_subject_index(subject_id)
+        school_index = self.exam.get_school_index(school_id)
+
+        first_row = self.exam_subject_dimen_description[index]
+        dimen_len = len(first_row)
+        first_row.insert(0, "知识块(排名变化)")
+        table_code = QA_CODE
+        if self.exam.base_student == handler.Exam.SPECIAL:
+            table_code = QA_ZK_CODE
+
+        first_col = self.exam.get_subject_exam_diff_names(subject_id)
+        item = item_config.DIMEN_RANK_DIFF_ITEMS[:dimen_len]
+        school_dimen_rank_diff = self.value.get_dimen_diff(item, table_code, school_id, subject_id)
+        print(first_row)
+        print_rows(list_util.combine_values_by_col(first_col, school_dimen_rank_diff))
+
 
 class Pic(object):
     def __init__(self, value):
@@ -539,20 +689,28 @@ def table_test():
     where = handler.Where(exam.exam_id)
     value = Value(exam, gradation, where)
 
-    # table = Table(value)
-    # school_id = exam.school_ids[0]
-    # subject_id = gradation.subject_ids[0]
-    # table.get_all_distribution()
-    # table.get_all_district_school_avg_rank()
-    # table.get_all_school_avg_rank(school_id)
-    # table.get_all_district_num()
-    # table.get_all_school_num(school_id)
-    # table.get_all_district_line()
-    # table.get_all_school_line(school_id)
-    # table.get_all_district_dimen_avg(subject_id)
-    # table.get_all_district_class_avg_rank()
-    pic = Pic(value)
-    pic.get_all_std()
+    school_id = exam.school_ids[0]
+    subject_id = gradation.subject_ids[0]
+    class_id = exam.class_ids[0]
+    table = Table(value)
+    table.get_all_distribution()
+    table.get_all_district_school_avg_rank()
+    table.get_all_school_avg_rank(school_id)
+    table.get_all_district_num()
+    table.get_all_school_num(school_id)
+    table.get_all_district_line()
+    table.get_all_school_line(school_id)
+    table.get_all_district_dimen_avg(subject_id)
+    table.get_all_district_class_avg_rank()
+    table.get_school_subject_dimen_ratio(school_id, subject_id)
+    table.get_class_avg_rank(class_id)
+    table.get_class_subject_dimen_ratio(class_id, subject_id)
+    table.get_school_subject_exams_avg_rank(school_id, subject_id)
+    table.get_school_exam_subject_dimen_rank(school_id, subject_id)
+    table.get_school_exam_subject_dimen_avg(school_id, subject_id)
+    table.get_school_exam_subject_dimen_rank_diff(school_id, subject_id)
+    # pic = Pic(value)
+    # pic.get_all_std()
     d2 = datetime.datetime.now()
     print(d2 - d1)
 

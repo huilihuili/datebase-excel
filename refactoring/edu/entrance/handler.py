@@ -86,6 +86,9 @@ class Gradation(object):
     def get_subject_name_by_id(self, subject_id):
         return self.subject_names[self.get_subject_index(subject_id)]
 
+    def get_district_index(self, district_id):
+        return self.district_ids.index(district_id)
+
 
 class Exam(object):
     SPECIAL = 1
@@ -112,10 +115,12 @@ class Exam(object):
         self.exam_ids = []
         self.exam_nicks = []
         self.exam_diff_ids = []
+        self.exam_diff_names = []
         for subject_id in gradation.subject_ids:
             self.exam_ids.append(self.get_exam_ids(subject_id))
             self.exam_nicks.append(self.get_exam_nicks(subject_id))
             self.exam_diff_ids.append(self.get_exam_diff_ids(subject_id))
+            self.exam_diff_names.append(self.get_exam_diff_names(subject_id))
 
         self.distribution_ids = []
         self.distribution_names = []
@@ -183,6 +188,17 @@ class Exam(object):
             result.append([exam_ids[0], exam_ids[- 1]])
         return result
 
+    def get_exam_diff_names(self, subject_id):
+        exam_names = self.get_subject_exam_names(subject_id)
+        length = len(exam_names)
+
+        result = []
+        for index in range(length - 1):
+            result.append('%s - %s' % (exam_names[index + 1], exam_names[index]))
+        if length > 2:
+            result.append('%s - %s' % (exam_names[-1], exam_names[0]))
+        return result
+
     def get_district_varied_ids(self, district_code):
         if district_code == Gradation.DISTRICT_CODE:
             return self.gradation.district_ids
@@ -194,8 +210,14 @@ class Exam(object):
     def get_subject_exam_ids(self, subject_id):
         return self.exam_ids[self.gradation.get_subject_index(subject_id)]
 
+    def get_subject_exam_names(self, subject_id):
+        return self.exam_nicks[self.gradation.get_subject_index(subject_id)]
+
     def get_subject_exam_diff_ids(self, subject_id):
         return self.exam_diff_ids[self.gradation.get_subject_index(subject_id)]
+
+    def get_subject_exam_diff_names(self, subject_id):
+        return self.exam_diff_names[self.gradation.get_subject_index(subject_id)]
 
     def get_subject_distribution_ids(self, subject_id=None):
         if subject_id is None:
@@ -231,6 +253,9 @@ class Exam(object):
 
     def get_school_index(self, school_id):
         return self.school_ids.index(school_id)
+
+    def get_class_index(self, class_id):
+        return self.class_ids.index(class_id)
 
 
 class Range(object):
